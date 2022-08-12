@@ -1,6 +1,6 @@
 # STScI
  
-- Repo for notebook usecase example development
+- Repo for notebook use case example development
 - Implementation of [Jira ASB-17424][1]
 
 
