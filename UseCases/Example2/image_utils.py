@@ -15,8 +15,8 @@ import http.client as httplib
 
 
 def getcolorim(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", format="jpg", **kw):
-    
-    """Get color image at a sky position
+    """
+    Get color image at a sky position
     
     ra, dec = position in degrees
     size = extracted image size in pixels (0.25 arcsec/pixel)
@@ -42,8 +42,8 @@ def getcolorim(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", f
 
 
 def getgrayim(ra, dec, size=240, zoom=1.0, output_size=None, filter="g", format="jpg", **kw):
-    
-    """Get grayscale image at a sky position
+    """
+    Get grayscale image at a sky position
     
     ra, dec = position in degrees
     size = extracted image size in pixels (0.25 arcsec/pixel)
@@ -74,7 +74,8 @@ def getgrayim(ra, dec, size=240, zoom=1.0, output_size=None, filter="g", format=
 
 
 def getwcs(image, extension=0, verbose=False):
-    """Get WCS for either a FITS image or a PIL JPEG Image
+    """
+    Get WCS for either a FITS image or a PIL JPEG Image
     
     Note that only JPEG images from MAST fitscut cutout services (such as 
     ps1images.stsci.edu, archive.stsci.edu and hla.stsci.edu) will have the necessary
@@ -96,13 +97,13 @@ def getwcs(image, extension=0, verbose=False):
     if verbose:
         print("wcs string")
         print(wstring.decode())
-    w = WCS(fits.Header.fromstring(wstring,sep='\n'))
+    w = WCS(fits.Header.fromstring(wstring, sep='\n'))
     return w
 
 
-def getimages(ra,dec,filters="grizy",verbose=False):
-    
-    """Query ps1filenames.py service to get a list of images
+def getimages(ra, dec, filters="grizy", verbose=False):
+    """
+    Query ps1filenames.py service to get a list of images
     
     ra, dec = position in degrees
     size = image size in pixels (0.25 arcsec/pixel)
@@ -119,8 +120,8 @@ def getimages(ra,dec,filters="grizy",verbose=False):
 
 
 def geturl(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", format="jpg", color=False, autoscale=99.75, asinh=True, verbose=False):
-    
-    """Get URL for images in the table
+    """
+    Get URL for images in the table
     
     ra, dec = position in degrees
     size = extracted image size in pixels (0.25 arcsec/pixel)
@@ -182,8 +183,8 @@ def geturl(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", forma
     
     
 def getgaia(ra, dec, radius, epoch=None, version="edr3", verbose=False, url='https://gsss.stsci.edu/webservices/VO/CatalogSearch.aspx'):
-
-    """Get Gaia sources at the given position
+    """
+    Get Gaia sources at the given position
 
     Returns table of Gaia sources.  If epoch is specified, new fields at
     that epoch (nra, ndec) are computed using the proper motions, along
@@ -290,3 +291,34 @@ def applypm(tab, epoch):
     tab['nepoch'].format = ".2f"
     tab['nra'].format = ".12f"
     tab['ndec'].format = ".13f"
+    
+    
+def getjpegim(imlist, zoom=0.5, autoscale=99.0, asinh=True, format="jpg", url="https://hla.stsci.edu/cgi-bin/fitscut.cgi"):
+    """
+    Get color JPEG image from a list of dataset names. If imlist has
+    only 1 element, a grayscale image is returned.
+    
+    autoscale determines the contrast -- move it away from 100 to increase the
+    contrast (98.0, 95.0, etc.) and move it toward 100 to increase the contrast
+    (99.5, 99.75, etc.). asinh also affects the contrast (the default is usually
+    ok).
+        
+    Default zoom bins image down by a factor of 2
+    
+    Returns a PIL image object (or a fits hdu if format="fits")
+    """
+    params = dict(zoom=zoom, autoscale=autoscale, asinh=asinh, size="all", format=format)
+    if isinstance(imlist,str):
+        # change string to a 1-element list
+        imlist = [imlist]
+    fname = ["red","green","blue"]
+    for i, imagename in enumerate(imlist[:len(fname)]):
+        params[fname[i]] = imagename
+    r = requests.get(url, params=params)
+    if format=="fits":
+        im = fits.open(BytesIO(r.content))
+    else:
+        im = Image.open(BytesIO(r.content))
+    return im
+
+
