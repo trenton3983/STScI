@@ -1,4 +1,8 @@
-import numpy, sys, json, requests, warnings
+import numpy
+import sys
+import json
+import requests
+import warnings
 
 from astropy.table import Table
 from astropy.io import fits
@@ -320,5 +324,41 @@ def getjpegim(imlist, zoom=0.5, autoscale=99.0, asinh=True, format="jpg", url="h
     else:
         im = Image.open(BytesIO(r.content))
     return im
+
+
+def get_hla_cutout(imagename, ra, dec, size=33, autoscale=99.5, asinh=True, zoom=1, instrument=None):
+    """
+    Get JPEG cutout for an image
+    If instrument is specified, the image size is scaled using the pixel size
+    for that instrument (compared with ACS/WFC)
+    """
+    
+    if instrument:
+        # compute pixel size in arcsec
+        detector = instrument.upper()
+        if detector in ['ACS/HRC','ACS/SBC','HRC','SBC','NIC1','NICMOS/NIC1']:
+            pixelsize = 0.025
+        elif detector in ['WFPC2','WF','WFPC2/WF','WFPC2/WFC','NIC3','NICMOS/NIC3']:
+            pixelsize = 0.1
+        elif detector in ['UVIS','WFC3/UVIS']:
+            pixelsize = 0.04
+        elif detector in ['IR','WFC3/IR']:
+            pixelsize = 0.09
+        elif detector.startswith('STIS'):
+            # MIRVIS (most common)
+            pixelsize = 0.05
+        else:
+            # ACS/WFC, WFPC2-PC, NIC2
+            pixelsize = 0.05
+        # change image size using ratio to ACS/WFC size
+        size = round(size*0.05/pixelsize)
+        if size < 10:
+            size = 10
+    url = "https://hla.stsci.edu/cgi-bin/fitscut.cgi"
+    r = requests.get(url, params=dict(ra=ra, dec=dec, size=size, format="jpeg", 
+                                      red=imagename, autoscale=autoscale, asinh=asinh, zoom=zoom))
+    im = Image.open(BytesIO(r.content))
+    return im
+
 
 
