@@ -15,13 +15,13 @@ import matplotlib.pyplot as plt
 
 from urllib.parse import quote as urlencode
 from urllib.request import urlretrieve
-import http.client as httplib 
+import http.client as httplib
 
 
 def getcolorim(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", format="jpg", **kw):
     """
     Get color image at a sky position
-    
+
     ra, dec = position in degrees
     size = extracted image size in pixels (0.25 arcsec/pixel)
     zoom = scale factor to reduce image size (default = 1, ignored if output_size is specified).
@@ -35,8 +35,8 @@ def getcolorim(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", f
     format = data format (options are "jpg", "png")
     Returns the image (a PIL Image)
     """
-    
-    if format not in ("jpg","png"):
+
+    if format not in ("jpg", "png"):
         raise ValueError("format must be jpg or png")
     url = geturl(ra, dec, size=size, zoom=zoom, output_size=output_size,
                  filters=filters, format=format, color=True, **kw)
@@ -62,8 +62,8 @@ def getgrayim(ra, dec, size=240, zoom=1.0, output_size=None, filter="g", format=
     format = data format (options are "jpg", "png" or "fits")
     Returns the image (either a FITS hdu or a PIL Image)
     """
-    
-    if format not in ("jpg","png","fits"):
+
+    if format not in ("jpg", "png", "fits"):
         raise ValueError("format must be jpg, png or fits")
     if filter not in list("grizy"):
         raise ValueError("filter must be one of grizy")
@@ -114,7 +114,7 @@ def getimages(ra, dec, filters="grizy", verbose=False):
     filters = string with filters to include
     Returns a table with the results
     """
-    
+
     service = "https://ps1images.stsci.edu/cgi-bin/ps1filenames.py"
     url = f"{service}?ra={ra}&dec={dec}&filters={filters}"
     table = Table.read(url, format='ascii')
@@ -123,7 +123,8 @@ def getimages(ra, dec, filters="grizy", verbose=False):
     return table
 
 
-def geturl(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", format="jpg", color=False, autoscale=99.75, asinh=True, verbose=False):
+def geturl(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", format="jpg", color=False, autoscale=99.75,
+           asinh=True, verbose=False):
     """
     Get URL for images in the table
     
@@ -143,23 +144,23 @@ def geturl(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", forma
     autoscale and asinh set image contrast for jpg and png format (ignored for fits)
     Returns a string with the URL for a color image or a list of URLs for grayscale images
     """
-    
+
     if color and format == "fits":
         raise ValueError("color images are available only for jpg or png formats")
-    if format not in ("jpg","png","fits"):
+    if format not in ("jpg", "png", "fits"):
         raise ValueError("format must be one of jpg, png, fits")
-    table = getimages(ra,dec,filters=filters,verbose=verbose)
+    table = getimages(ra, dec, filters=filters, verbose=verbose)
     url = "https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?"
-    params = [ f"ra={ra}", f"dec={dec}", f"format={format}" ]
+    params = [f"ra={ra}", f"dec={dec}", f"format={format}"]
     if output_size and format != "fits":
         params.append(f"output_size={output_size}")
     elif zoom != 1:
         params.append(f"zoom={zoom}")
         # round size up to a multiple of 1/zoom (not strictly necessary, but may
         # improve quality of edge pixels)
-        zround = round(1./zoom)
+        zround = round(1. / zoom)
         if zround > 1:
-            size += (zround-size) % zround
+            size += (zround - size) % zround
     params.append(f"size={size}")
     if format != "fits":
         params.append(f"autoscale={autoscale}")
@@ -171,22 +172,23 @@ def geturl(ra, dec, size=240, zoom=1.0, output_size=None, filters="grizy", forma
     if color:
         if len(table) > 3:
             # pick 3 filters
-            table = table[[0,len(table)//2,len(table)-1]]
-        for i, param in enumerate(["red","green","blue"]):
-            params.append("{}={}".format(param,table['filename'][i]))
+            table = table[[0, len(table) // 2, len(table) - 1]]
+        for i, param in enumerate(["red", "green", "blue"]):
+            params.append("{}={}".format(param, table['filename'][i]))
         url = url + "&".join(params)
     else:
         params.append("red=")
         urlbase = url + "&".join(params)
         url = []
         for filename in table['filename']:
-            url.append(urlbase+filename)
+            url.append(urlbase + filename)
     if verbose:
         print("url", url)
     return url
-    
-    
-def getgaia(ra, dec, radius, epoch=None, version="edr3", verbose=False, url='https://gsss.stsci.edu/webservices/VO/CatalogSearch.aspx'):
+
+
+def getgaia(ra, dec, radius, epoch=None, version="edr3", verbose=False,
+            url='https://gsss.stsci.edu/webservices/VO/CatalogSearch.aspx'):
     """
     Get Gaia sources at the given position
 
@@ -214,19 +216,19 @@ def getgaia(ra, dec, radius, epoch=None, version="edr3", verbose=False, url='htt
     """
     vlist = ['dr2', 'edr3']
     if version not in vlist:
-        raise ValueError("version '{}' must be one of {}".format(version,', '.join(vlist)))
-    catname = 'gaia'+version
+        raise ValueError("version '{}' must be one of {}".format(version, ', '.join(vlist)))
+    catname = 'gaia' + version
     r = requests.get(url, params=dict(ra=ra, dec=dec, sr=radius, version=version,
-            format='csv', cat=catname))
+                                      format='csv', cat=catname))
     try:
-        gcat = Table.read(r.text,format='ascii.csv',comment='#')
+        gcat = Table.read(r.text, format='ascii.csv', comment='#')
         # change column names to lowercase
         for col in gcat.colnames:
             lcol = col.lower()
             if lcol != col:
-                gcat.rename_column(col,lcol)
+                gcat.rename_column(col, lcol)
                 if verbose:
-                    print("renamed {} to {}".format(col,lcol))
+                    print("renamed {} to {}".format(col, lcol))
     except IndexError:
         # no Gaia sources found
         gcat = []
@@ -268,36 +270,37 @@ def applypm(tab, epoch):
     :returns:          None
     """
     dt = epoch - tab['ref_epoch']
-    dra = tab['pmra']*dt
-    ddec = tab['pmdec']*dt
+    dra = tab['pmra'] * dt
+    ddec = tab['pmdec'] * dt
     tab['ndra'] = dra
     tab['nddec'] = ddec
-    tab['nra'] = tab['ra'] + dra*(1.e-3/(3600.0*np.cos((np.pi/180)*tab['dec'])))
-    tab['ndec'] = tab['dec'] + ddec*(1.e-3/3600.0)
-    ra_var = (tab['ra_error']**2 +
-              (dt*tab['pmra_error'])**2 +
-              2*dt*tab['ra_pmra_corr']*tab['ra_error']*tab['pmra_error'])
-    dec_var = (tab['dec_error']**2 +
-               (dt*tab['pmdec_error'])**2 +
-               2*dt*tab['dec_pmdec_corr']*tab['dec_error']*tab['pmdec_error'])
-    ra_dec_covar = (tab['ra_dec_corr']*tab['ra_error']*tab['dec_error'] +
-                    dt*tab['ra_pmdec_corr']*tab['ra_error']*tab['pmdec_error'] +
-                    dt*tab['dec_pmra_corr']*tab['dec_error']*tab['pmra_error'] +
-                    dt**2*tab['pmra_pmdec_corr']*tab['pmra_error']*tab['pmdec_error'])
+    tab['nra'] = tab['ra'] + dra * (1.e-3 / (3600.0 * np.cos((np.pi / 180) * tab['dec'])))
+    tab['ndec'] = tab['dec'] + ddec * (1.e-3 / 3600.0)
+    ra_var = (tab['ra_error'] ** 2 +
+              (dt * tab['pmra_error']) ** 2 +
+              2 * dt * tab['ra_pmra_corr'] * tab['ra_error'] * tab['pmra_error'])
+    dec_var = (tab['dec_error'] ** 2 +
+               (dt * tab['pmdec_error']) ** 2 +
+               2 * dt * tab['dec_pmdec_corr'] * tab['dec_error'] * tab['pmdec_error'])
+    ra_dec_covar = (tab['ra_dec_corr'] * tab['ra_error'] * tab['dec_error'] +
+                    dt * tab['ra_pmdec_corr'] * tab['ra_error'] * tab['pmdec_error'] +
+                    dt * tab['dec_pmra_corr'] * tab['dec_error'] * tab['pmra_error'] +
+                    dt ** 2 * tab['pmra_pmdec_corr'] * tab['pmra_error'] * tab['pmdec_error'])
     tab['nra_error'] = np.sqrt(ra_var)
     tab['ndec_error'] = np.sqrt(dec_var)
-    tab['nra_dec_corr'] = ra_dec_covar/np.sqrt(ra_var*dec_var)
+    tab['nra_dec_corr'] = ra_dec_covar / np.sqrt(ra_var * dec_var)
     tab['nepoch'] = epoch
     for c in ['nra_error', 'ndec_error', 'ndra', 'nddec',
-            'ra_error','dec_error','pmra','pmdec','pmra_error','pmdec_error']:
+              'ra_error', 'dec_error', 'pmra', 'pmdec', 'pmra_error', 'pmdec_error']:
         tab[c].format = ".2f"
     tab['nra_dec_corr'].format = ".4f"
     tab['nepoch'].format = ".2f"
     tab['nra'].format = ".12f"
     tab['ndec'].format = ".13f"
-    
-    
-def getjpegim(imlist, zoom=0.5, autoscale=99.0, asinh=True, format="jpg", url="https://hla.stsci.edu/cgi-bin/fitscut.cgi"):
+
+
+def getjpegim(imlist, zoom=0.5, autoscale=99.0, asinh=True, format="jpg",
+              url="https://hla.stsci.edu/cgi-bin/fitscut.cgi"):
     """
     Get color JPEG image from a list of dataset names. If imlist has
     only 1 element, a grayscale image is returned.
@@ -312,14 +315,14 @@ def getjpegim(imlist, zoom=0.5, autoscale=99.0, asinh=True, format="jpg", url="h
     Returns a PIL image object (or a fits hdu if format="fits")
     """
     params = dict(zoom=zoom, autoscale=autoscale, asinh=asinh, size="all", format=format)
-    if isinstance(imlist,str):
+    if isinstance(imlist, str):
         # change string to a 1-element list
         imlist = [imlist]
-    fname = ["red","green","blue"]
+    fname = ["red", "green", "blue"]
     for i, imagename in enumerate(imlist[:len(fname)]):
         params[fname[i]] = imagename
     r = requests.get(url, params=params)
-    if format=="fits":
+    if format == "fits":
         im = fits.open(BytesIO(r.content))
     else:
         im = Image.open(BytesIO(r.content))
@@ -332,17 +335,17 @@ def get_hla_cutout(imagename, ra, dec, size=33, autoscale=99.5, asinh=True, zoom
     If instrument is specified, the image size is scaled using the pixel size
     for that instrument (compared with ACS/WFC)
     """
-    
+
     if instrument:
         # compute pixel size in arcsec
         detector = instrument.upper()
-        if detector in ['ACS/HRC','ACS/SBC','HRC','SBC','NIC1','NICMOS/NIC1']:
+        if detector in ['ACS/HRC', 'ACS/SBC', 'HRC', 'SBC', 'NIC1', 'NICMOS/NIC1']:
             pixelsize = 0.025
-        elif detector in ['WFPC2','WF','WFPC2/WF','WFPC2/WFC','NIC3','NICMOS/NIC3']:
+        elif detector in ['WFPC2', 'WF', 'WFPC2/WF', 'WFPC2/WFC', 'NIC3', 'NICMOS/NIC3']:
             pixelsize = 0.1
-        elif detector in ['UVIS','WFC3/UVIS']:
+        elif detector in ['UVIS', 'WFC3/UVIS']:
             pixelsize = 0.04
-        elif detector in ['IR','WFC3/IR']:
+        elif detector in ['IR', 'WFC3/IR']:
             pixelsize = 0.09
         elif detector.startswith('STIS'):
             # MIRVIS (most common)
@@ -351,14 +354,11 @@ def get_hla_cutout(imagename, ra, dec, size=33, autoscale=99.5, asinh=True, zoom
             # ACS/WFC, WFPC2-PC, NIC2
             pixelsize = 0.05
         # change image size using ratio to ACS/WFC size
-        size = round(size*0.05/pixelsize)
+        size = round(size * 0.05 / pixelsize)
         if size < 10:
             size = 10
     url = "https://hla.stsci.edu/cgi-bin/fitscut.cgi"
-    r = requests.get(url, params=dict(ra=ra, dec=dec, size=size, format="jpeg", 
+    r = requests.get(url, params=dict(ra=ra, dec=dec, size=size, format="jpeg",
                                       red=imagename, autoscale=autoscale, asinh=asinh, zoom=zoom))
     im = Image.open(BytesIO(r.content))
     return im
-
-
-
