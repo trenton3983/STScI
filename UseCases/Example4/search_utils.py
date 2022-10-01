@@ -5,6 +5,7 @@ from io import StringIO
 
 hscapiurl = "https://catalogs.mast.stsci.edu/api/v0.1/hsc"
 
+
 # Useful functions
 # The hcvcone(ra, dec, radius [,keywords]) function searches the HCV catalog near a position.
 # The hcvsearch() function performs general non-positional queries.
@@ -13,7 +14,8 @@ hscapiurl = "https://catalogs.mast.stsci.edu/api/v0.1/hsc"
 
 def hcvcone(ra, dec, radius, table="hcvsummary", release="v3", format="csv", magtype="magaper2",
             columns=None, baseurl=hscapiurl, verbose=False, **kw):
-    """Do a cone search of the HSC catalog (including the HCV)
+    """
+    Do a cone search of the HSC catalog (including the HCV)
     
     Parameters
     ----------
@@ -29,7 +31,7 @@ def hcvcone(ra, dec, radius, table="hcvsummary", release="v3", format="csv", mag
     verbose: print info about request
     **kw: other parameters (e.g., 'numimages.gte':2)
     """
-    
+
     data = kw.copy()
     data['ra'] = ra
     data['dec'] = dec
@@ -40,7 +42,8 @@ def hcvcone(ra, dec, radius, table="hcvsummary", release="v3", format="csv", mag
 
 def hcvsearch(table="hcvsummary", release="v3", magtype="magaper2", format="csv",
               columns=None, baseurl=hscapiurl, verbose=False, **kw):
-    """Do a general search of the HSC catalog (possibly without ra/dec/radius)
+    """
+    Do a general search of the HSC catalog (possibly without ra/dec/radius)
     
     Parameters
     ----------
@@ -53,7 +56,7 @@ def hcvsearch(table="hcvsummary", release="v3", magtype="magaper2", format="csv"
     verbose: print info about request
     **kw: other parameters (e.g., 'numimages.gte':2).  Note this is required!
     """
-    
+
     data = kw.copy()
     if not data:
         raise ValueError("You must specify some parameters for search")
@@ -90,7 +93,8 @@ def hcvsearch(table="hcvsummary", release="v3", magtype="magaper2", format="csv"
 
 
 def hcvmetadata(table="hcvsummary", release="v3", magtype="magaper2", baseurl=hscapiurl):
-    """Return metadata for the specified catalog and table
+    """
+    Return metadata for the specified catalog and table
     
     Parameters
     ----------
@@ -101,7 +105,7 @@ def hcvmetadata(table="hcvsummary", release="v3", magtype="magaper2", baseurl=hs
     
     Returns an astropy table with columns name, type, description
     """
-    url = f"{cat2url(table,release,magtype,baseurl=baseurl)}/metadata"
+    url = f"{cat2url(table, release, magtype, baseurl=baseurl)}/metadata"
     r = requests.get(url)
     r.raise_for_status()
     v = r.json()
@@ -113,7 +117,8 @@ def hcvmetadata(table="hcvsummary", release="v3", magtype="magaper2", baseurl=hs
 
 def hsccone(ra, dec, radius, table="summary", release="v3", format="csv", magtype="magaper2",
             columns=None, baseurl=hscapiurl, verbose=False, **kw):
-    """Do a cone search of the HSC catalog
+    """
+    Do a cone search of the HSC catalog
 
     Parameters
     ----------
@@ -140,7 +145,8 @@ def hsccone(ra, dec, radius, table="summary", release="v3", format="csv", magtyp
 
 def hscsearch(table="summary", release="v3", magtype="magaper2", format="csv",
               columns=None, baseurl=hscapiurl, verbose=False, **kw):
-    """Do a general search of the HSC catalog (possibly without ra/dec/radius)
+    """
+    Do a general search of the HSC catalog (possibly without ra/dec/radius)
 
     Parameters
     ----------
@@ -197,7 +203,8 @@ def hscsearch(table="summary", release="v3", magtype="magaper2", format="csv",
 
 
 def hscmetadata(table="summary", release="v3", magtype="magaper2", baseurl=hscapiurl):
-    """Return metadata for the specified catalog and table
+    """
+    Return metadata for the specified catalog and table
     
     Parameters
     ----------
@@ -216,10 +223,11 @@ def hscmetadata(table="summary", release="v3", magtype="magaper2", baseurl=hscap
     tab = Table(rows=[(x['name'], x['type'], x['description']) for x in v],
                 names=('name', 'type', 'description'))
     return tab
-    
+
 
 def cat2url(table="hcvsummary", release="v3", magtype="magaper2", baseurl=hscapiurl):
-    """Return URL for the specified catalog and table
+    """
+    Return URL for the specified catalog and table
     
     Parameters
     ----------
@@ -239,11 +247,12 @@ def cat2url(table="hcvsummary", release="v3", magtype="magaper2", baseurl=hscapi
 
 
 def checklegal(table, release, magtype):
-    """Checks if this combination of table, release and magtype is acceptable
+    """
+    Checks if this combination of table, release and magtype is acceptable
     
     Raises a ValueError exception if there is problem
     """
-    
+
     releaselist = ("v2", "v3")
     if release not in releaselist:
         raise ValueError(f"Bad value for release (must be one of {', '.join(releaselist)})")
